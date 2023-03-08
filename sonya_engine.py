@@ -1,5 +1,6 @@
 import math
 import pygame as pg
+
 from engine_settings import *
 from colors import *
 
@@ -13,6 +14,14 @@ class Vector2:
 
     def get_module(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def reverse(self):
+        self.x = -self.x
+        self.y = -self.y
+
+    @staticmethod
+    def get_reversed(self):
+        return Vector2(-self.x, -self.y)
 
     @staticmethod
     def scalar_mul(v, scalar):
@@ -44,18 +53,37 @@ class Vector2:
         self.y -= other.y
         return self
 
-# Инкапсулировать позицию
+    # Сравнение векторов
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
+
+    def __lt__(self, other):
+        return self.get_module() < other.get_module()
+
+    def __le__(self, other):
+        return self.get_module() < other.get_module() or self == other
+
+    def __gt__(self, other):
+        return self.get_module() > other.get_module()
+
+    def __ge__(self, other):
+        return self.get_module() > other.get_module() or self == other
 
 
 class Object:
     def __init__(self):
         self.__pos = Vector2(0, 0)
+        self.prev_pos = Vector2(0, 0)
         self.screen = None
         self.speed = Vector2(0, 0)
 
     def update(self):
         global delta_time
         pos_new = Vector2.scalar_mul(self.speed, delta_time)
+        self.prev_pos = self.__pos
         self.move(self.__pos + pos_new)
 
     def draw(self):
@@ -133,14 +161,19 @@ class Engine:
         self.delta_time = 1
         self.is_running = True
         self.objects = []
+        self.solid_objects = []
         pg.display.set_caption('Space Shooter X23')
 
     def run(self):
         global delta_time
         while self.is_running:
             self.read_events()
+
             for i in self.objects:
                 i.update()
+
+            Engine.process_bouncing(self.solid_objects)
+
             self.draw()
             delta_time = self.clock.tick(FPS)
 
@@ -158,3 +191,28 @@ class Engine:
     def add_object(self, obj):
         self.objects.append(obj)
         obj.screen = self.screen
+
+    def add_solid_object(self, obj):
+        self.add_object(obj)
+        self.solid_objects.append(obj)
+
+    @staticmethod
+    def process_bouncing(objects_list):
+        for i in objects_list:
+            for j in objects_list:
+                if i == j:
+                    continue
+                else:
+                    if Engine.process_collisions(i, j):
+                        i.speed.reverse()
+                        j.speed.reverse()
+
+    @staticmethod
+    def process_collisions(o1, o2):
+        if CircleCollider.is_intersects(o1.collider, o2.collider):
+            o1.move(o1.prev_pos)
+            o2.move(o2.prev_pos)
+            return True
+        else:
+            return False
+
