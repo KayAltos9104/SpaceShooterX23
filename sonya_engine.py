@@ -1,5 +1,6 @@
 import math
 import pygame as pg
+import game_settings as gs
 
 from engine_settings import *
 from colors import *
@@ -117,8 +118,6 @@ class SolidObject (Object):
     def __init__(self, collider):
         super().__init__()
         self.collider = collider
-        # Нет смысла, так как у нас объект всегда в точке появляется (0,0), а потом уже мы сдвигаем
-        # self.collider.pos = self.__pos
 
     def move(self, v_new):
         super().move(v_new)
@@ -157,29 +156,46 @@ class Engine:
     def __init__(self):
         pg.init()
         self.screen = pg.display.set_mode(RESOLUTION)
+        self.__id = 1
         self.clock = pg.time.Clock()
         self.delta_time = 1
         self.is_running = True
-        self.objects = []
-        self.solid_objects = []
+        self.objects = {}
+        self.solid_objects = {}
+        self.player_id = None
         pg.display.set_caption('Space Shooter X23')
 
     def run(self):
         global delta_time
         while self.is_running:
             self.read_events()
+            pressed_keys = pg.key.get_pressed()
 
-            for i in self.objects:
+            if pressed_keys[gs.KEYBOARD[gs.Controls.go_up.value]]:
+                self.objects[self.player_id].speed += Vector2(0, -0.1)
+            if pressed_keys[gs.KEYBOARD[gs.Controls.go_down.value]]:
+                self.objects[self.player_id].speed += Vector2(0, 0.1)
+            if pressed_keys[gs.KEYBOARD[gs.Controls.go_right.value]]:
+                self.objects[self.player_id].speed += Vector2(0.1, 0)
+            if pressed_keys[gs.KEYBOARD[gs.Controls.go_left.value]]:
+                self.objects[self.player_id].speed += Vector2(-0.1, 0)
+            if pressed_keys[gs.KEYBOARD[gs.Controls.shoot.value]]:
+                print('Пиф-паф!')
+
+
+            for i in self.objects.values():
                 i.update()
 
-            Engine.process_bouncing(self.solid_objects)
+            Engine.process_bouncing(self.solid_objects.values())
 
             self.draw()
             delta_time = self.clock.tick(FPS)
 
+            self.objects[self.player_id].speed = Vector2(0, 0)
+
     def draw(self):
         self.screen.fill(BLACK)
-        for i in self.objects:
+        for i in self.objects.values():
             i.draw()
         pg.display.flip()
 
@@ -189,12 +205,17 @@ class Engine:
                 self.is_running = False
 
     def add_object(self, obj):
-        self.objects.append(obj)
+        self.objects[self.__id] = obj
         obj.screen = self.screen
+        self.__id += 1
 
     def add_solid_object(self, obj):
         self.add_object(obj)
-        self.solid_objects.append(obj)
+        self.solid_objects[self.__id-1] = obj
+
+    def add_player(self, obj):
+        self.add_solid_object(obj)
+        self.player_id = self.__id-1
 
     @staticmethod
     def process_bouncing(objects_list):
