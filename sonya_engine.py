@@ -162,6 +162,7 @@ class Engine:
         self.is_running = True
         self.objects = {}
         self.solid_objects = {}
+        self.projectiles = []
         self.player_id = None
         pg.display.set_caption('Space Shooter X23')
 
@@ -181,7 +182,6 @@ class Engine:
                 self.objects[self.player_id].speed += Vector2(-0.1, 0)
             if pressed_keys[gs.KEYBOARD[gs.Controls.shoot.value]]:
                 print('Пиф-паф!')
-
 
             for i in self.objects.values():
                 i.update()

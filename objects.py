@@ -23,3 +23,16 @@ class Ship (SolidObject):
                        (self.get_pos().x, self.get_pos().y), self.collider.radius)
         pg.draw.circle(self.screen, WHITE,
                        (self.collider.pos.x, self.collider.pos.y), self.collider.radius, 2)
+
+
+class Rocket (SolidObject):
+    def __init__(self, collider):
+        super().__init__(collider)
+        self.is_alive = True
+
+    def explode(self):
+        self.is_alive = False
+
+    def draw(self):
+        pg.draw.circle(self.screen, RED,
+                       (self.get_pos().x, self.get_pos().y), self.collider.radius)
